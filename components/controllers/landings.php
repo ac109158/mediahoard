@@ -1,14 +1,14 @@
 <?php
 class ControllerLandings extends Helper
-{	
+{
 		public function __construct()
 		{
-			$this->log('ControllerLandings', 'debug.html'); 
+			$this->log('ControllerLandings', 'debug.html');
 			parent::__construct();
 			session_start();
 			$this->model = $this->fetchModel('landing'); // set primary model
 		}
-		
+
 		public function display($vars=null)
 		{
 			$this->log('ControllerLandings->display('.$vars.')', 'debug.html');
@@ -22,7 +22,7 @@ class ControllerLandings extends Helper
 				$this->log($vars, 'debug.html');
 			}
 			if ( isset( $_POST['l_submitted'] ) && $vars['option'] == 'login' )
-			{				
+			{
 				$this->log('Process Login Request', 'debug.html');
 				$vars['formvars'] = $this->CollectFormSubmission();
 				$vars = $this->sign_in($vars);
@@ -36,22 +36,23 @@ class ControllerLandings extends Helper
 			else if ( $vars['controller'] && $vars['task'] && $vars['view'] )
 			{
 				$this->log('Process URL request:', 'debug.html');
-			}			
-			else 
+			}
+			else
 			{
 				$this->log(' Process default', 'debug.html');
-				$vars['view'] = 'landing';				
+				$vars['view'] = 'landing';
 			}
+			$this->log($vars);
 			$this->model->display($vars);
 		}
 
 
-		
+
 
 		private function register($vars)
 		{
 			$this->log('ControllerLandings->register('.$vars.')', 'debug.html');
-			$this->log('register()', 'debug.html'); 			
+			$this->log('register()', 'debug.html');
 			$complete = $this->model->isArrayFull($_POST);
 			if ($complete !== true)
 			{
@@ -66,18 +67,18 @@ class ControllerLandings extends Helper
 				$this->log($result, 'debug.html');
 				$vars = $this->Warning($vars['response'], $vars);
 				return $vars;
-			} else 
+			} else
 			{
 				$_POST = array();
 				$vars = $this->Success('Registration Successful', $vars);
 				return $vars;
 			}
-			
+
 		}
 
 		private function sign_in($vars)
 		{
-			$this->log('ControllerLandings->sign-in', 'debug.html'); 
+			$this->log('ControllerLandings->sign-in', 'debug.html');
 			//testing log
 			if ( $_COOKIE['restriction']  != false) {
 				$msg = '<br><center>Your account has been locked for security purposes.</center><br>';
@@ -87,21 +88,21 @@ class ControllerLandings extends Helper
 			}
 			if (isset($_POST['l_submitted']))
 			{
-				$this->log('sign_in', 'debug.html');		
+				$this->log('sign_in', 'debug.html');
 				$this->log($_POST, 'debug.html');
 				//validate login form
 				$form_completed = $this->model->isArrayFull($_POST);
-				if ( $form_completed !== true) 
-				{	
+				if ( $form_completed !== true)
+				{
 					$this->log('Form Complete >>' . $form_completed, 'debug.html');
 					$vars = $this->invalidSignIn($vars);
 					return $vars;
-				} 
+				}
 				$this->log('Form Complete >>' . $form_completed, 'debug.html');
 				//validate credentials
 				$username = $this->request($_POST['l_username']);
 				$password = $this->request($_POST['l_password']);
-				if ( !$this->model->CheckLoginInDB($username, $password) ) 
+				if ( !$this->model->CheckLoginInDB($username, $password) )
 				{
 					$vars = $this->invalidSignIn($vars);
 					return $vars;
@@ -117,7 +118,7 @@ class ControllerLandings extends Helper
 			}
 			header('location:index.php?controller=landings&task=display&view=login');
 			//exit
-			exit;			
+			exit;
 		}
 
 		private function invalidSignIn($vars)
@@ -125,7 +126,7 @@ class ControllerLandings extends Helper
 			$this->log('ControllerLandings->invalidSignIn', 'debug.ht ml');
 
 			$this->log('invalidSignIn()', 'debug.html');
-			if ($_SESSION['attempts'] === 0 ) 
+			if ($_SESSION['attempts'] === 0 )
 			{
 				setcookie('restriction', time() + (1800) ,time() + (1800)); // 30 min
 				$this->log('Session User has been locked out >>>' . $_COOKIE['restriction'], 'debug.html');
@@ -139,13 +140,13 @@ class ControllerLandings extends Helper
 			if ($_SESSION['attempts'] < 6 )
 			{
 				$this->log('Invalid Sign In >> Attempts ' . $_SESSION['attempts'], 'debug.html');
-				$msg .= '<center>You have ' . $_SESSION['attempts'] . ' attempt remaining</center>';				
+				$msg .= '<center>You have ' . $_SESSION['attempts'] . ' attempt remaining</center>';
 			}
 			$msg .= '<br><br>';
 			$_SESSION['attempts']--;
 			$this->log('$_SESSION["attempts"] = ' . $_SESSION['attempts'], 'debug.html');
 
-			$vars = $this->Warning($msg, $vars); 
+			$vars = $this->Warning($msg, $vars);
 			return $vars;
 
 		}
@@ -170,44 +171,44 @@ class ControllerLandings extends Helper
 
 		public function validate()
 		{
-			
+
 			$complete = $this->fetchModel('landing', 'validateForm');
-			if ($complete !== true) 
+			if ($complete !== true)
 			{
 				$vars['msg'] = $complete;
 				$vars['msgColor'] = 'red';
-				$this->display($vars); 
+				$this->display($vars);
 				exit;
 			}
 			foreach ($_POST as $key => $value) {
 				$vars[$key] = $value;
 			}
 			$delivery = $this->fetchModel('landing', 'sendEmail', $vars);
-			if ( $delivery === true ) 
-			{ 
+			if ( $delivery === true )
+			{
 				$vars['msg'] = 'Thank You. An email has been sent.';
 				$vars['msgColor'] = 'green';
 				$vars['view'] = 'landing';
-				$this->display($vars); 
+				$this->display($vars);
 				$thiswrite_to_file($_POST, 'storage.txt', './storage/');
 				exit;
-			} else 
+			} else
 			{
 				$vars['msg'] = 'Thank You. Email Failed';
 				$vars['msgColor'] = 'grey';
 				$vars['view'] = 'landing';
-				$this->display($vars); 
+				$this->display($vars);
 				$this->write_to_file($_POST, 'storage.txt', './storage/');
 				exit;
 
 			}
-			
-					
+
+
 		}
-		
 
 
-		
-}		
+
+
+}
 
 ?>

@@ -23,10 +23,12 @@ $date = date("l  F j, o");define('DATE', "$date");
 
 
 define('DB_TYPE', 'mysql');
-define('DB_HOST', 'mysql.cs.dixie.edu');
-define('DB_NAME', 'acook');
-define('DB_USER', 'acook');
-define('DB_PASS', 'Victory83');
+define('DB_HOST', 'mysql.andy.plusonedevelopment.com');
+define('DB_NAME', 'andy_database');
+define('DB_USER', 'andy2013');
+define('DB_PASS', 'PlusOne');
+
+define('DB_USERS_TABLE', 'mh_users');
 
 define('STYLE', CSS.'style.css');
 

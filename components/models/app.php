@@ -1,10 +1,11 @@
 <?php
-class ModelApp {	
+class ModelApp {
 		public function __construct()
 		{
-		session_start();	
+		session_start();
+		$this->user_table = DB_USERS_TABLE;
 		}
-		
+
 		public function display($vars)
 		{
 			require_once './lib/helper.php';
@@ -36,7 +37,7 @@ class ModelApp {
 		{
 			require_once './lib/helper.php';
 			$helper = new Helper();
-			if ( !$helper->isMatch($_POST['password'], $_POST['confirm_password'] ) ) 
+			if ( !$helper->isMatch($_POST['password'], $_POST['confirm_password'] ) )
 			{
 				return 'Passwords do not match';
 			}
@@ -44,7 +45,7 @@ class ModelApp {
 			{
 				return 'Email invalid';
 			}
-			if (!$this->validatePhone($_POST['phone'])) 
+			if (!$this->validatePhone($_POST['phone']))
 			{
 				return 'Phone is invalid';
 			}
@@ -55,10 +56,10 @@ class ModelApp {
 			if ( !$this->IsFieldUnique('phone', $vars['phone']) ) { return 'Email is already in use';}
 			$qry = $this->getRegisterQuery($vars);
 			$result = mysqli_query($conn, "$qry");
-			if (mysqli_affected_rows($conn) == 1) 
+			if (mysqli_affected_rows($conn) == 1)
 				{
 				 	return true;
-				} else 
+				} else
 				{
 					return "Registration Unsuccessful";
 				}
@@ -71,28 +72,28 @@ class ModelApp {
 
 			$vars['f_name'] = $this->Sanitize($_POST['f_name']);
 			$vars['l_name'] = $this->Sanitize($_POST['l_name']);
-			$vars['email'] = $this->Sanitize($_POST['email']);		 
-			$vars['phone'] = $this->numbersOnly($_POST['phone']);	
+			$vars['email'] = $this->Sanitize($_POST['email']);
+			$vars['phone'] = $this->numbersOnly($_POST['phone']);
 			$vars['username'] = $this->Sanitize($_POST['username']);
 			$vars['password'] = $this->Sanitize($_POST['password']);
 			return $vars;
-		} 
+		}
 
-		private function getDBC() 
+		private function getDBC()
 		{
 
 			$conn= mysqli_connect(DB_HOST,DB_USER,DB_PASS,DB_NAME) or die("Error " . mysqli_error($con));
 			return $conn;
-			
+
 
 		}
 
 		private function getRegisterQuery($vars)
 		{
-			$confirm_code = $this->MakeConfirmationMd5($vars['email']);	
-			$invite_code = $this->MakeConfirmationMd5($vars['email']);	
-			$vars['confirmcode'] = $confirmcode;	
-			$insert_query = 'INSERT INTO users (
+			$confirm_code = $this->MakeConfirmationMd5($vars['email']);
+			$invite_code = $this->MakeConfirmationMd5($vars['email']);
+			$vars['confirmcode'] = $confirmcode;
+			$insert_query = 'INSERT INTO ' . $this->user_table . ' (
 			f_name,
 			l_name,
 			email,
@@ -121,7 +122,7 @@ class ModelApp {
 			$conn = $this->getDBC();
 			//$field = $this->SanitizeForSQL($field);
 			$qry = "SELECT username FROM users WHERE $this->Sanitize($field) ='".$this->Sanitize($value)."'";
-			$result = mysqli_query($conn, $qry);			
+			$result = mysqli_query($conn, $qry);
 			if($result && mysqli_num_rows($result) > 0) { return false; }
 			return true;
 		}
@@ -134,9 +135,9 @@ class ModelApp {
 		{
 			require_once 'lib/class.phpmailer.php';
 			$mailer = new PHPMailer();
-			$mailer->CharSet = 'utf-8';	
-			$mailer->AddAddress($vars['email'],$vars['name']);	
-			$mailer->Subject = 'CS-4000 PHP';	
+			$mailer->CharSet = 'utf-8';
+			$mailer->AddAddress($vars['email'],$vars['name']);
+			$mailer->Subject = 'CS-4000 PHP';
 			$mailer->From = 'acook20@dmail.dixie.edu';
 			$mailer->Body ="Hello ".$vars[name]."\r\n\r\n".
 			"Thanks for submitting your contact information.\r\n".
@@ -150,13 +151,13 @@ class ModelApp {
 			"Regards,\r\n".
 			"Webmaster\r\n".
 			'Andy Cook';
-			
+
 			if ( !$mailer->Send() ) {return false;}
 			return true;
 		}
 
 
-		public function log($data, $file='log.txt', $path = null, $method = null)		
+		public function log($data, $file='debug.html', $path = null, $method = null)
 		{
 			$outBuffer = '';
 			$filepath  = (isset($path)) ? $path . $file : 'storage/logs'. $file;
@@ -164,13 +165,13 @@ class ModelApp {
 			$file_handle = fopen("$filepath", $method) or die('Cannot open file:  '.$filepath);
 			if ( is_array($data))
 			{
-				foreach ($data as $key => $value) 
+				foreach ($data as $key => $value)
 				{
 					$outBuffer .= $key . ':'  . $value . '\r\n';
 				}
 				$outBuffer .= '*ER*' . '\r\n';
 			}
-			else 
+			else
 			{
 				$outBuffer .= $data;
 			}
@@ -183,7 +184,7 @@ class ModelApp {
 
 		function Sanitize($str,$remove_nl=true)
 		{
-		$str = $this->StripSlashes($str);	
+		$str = $this->StripSlashes($str);
 		if($remove_nl)
 			{
 			$injections = array('/(\n+)/i',
@@ -195,9 +196,9 @@ class ModelApp {
 			'/(%09+)/i'
 			);
 			$str = preg_replace($injections,'',$str);
-			}	
+			}
 		return $str;
-		} 
+		}
 
 		function SafeDisplay($value)
 		{
@@ -225,23 +226,23 @@ class ModelApp {
 		private function MakeConfirmationMd5($email)
 		{
 			$randno1 = rand();
-			$randno2 = rand();		
+			$randno2 = rand();
 			return md5($email.$this->rand_key.$randno1.''.$randno2);
 		}
 
-		public function validatePhone($string) 
+		public function validatePhone($string)
 	{
 		$numbersOnly = preg_replace('/\D/', '', $string);
 		$numberOfDigits = strlen($numbersOnly);
-		if ($numberOfDigits >=10 && $numberOfDigits <= 12) 
+		if ($numberOfDigits >=10 && $numberOfDigits <= 12)
 		{
 		return true;
-		} else 
+		} else
 		{
 		return false;
 		}
 	}
-		
+
 
 }//end of class
 
